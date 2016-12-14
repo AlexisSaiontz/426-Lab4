@@ -129,7 +129,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       return;
     }
     if (!strncmp(hm->uri.p, "/api/v1/add_node", hm->uri.len)) {
-    
+      printf("%s\n", "here" );
       // body does not contain expected key
       if (find_id == 0) {
         badRequest(c);
@@ -173,7 +173,17 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
          return;
       }
       if(arg_a_int %3 == CHAIN_NUM-1 && arg_b_int %3 == CHAIN_NUM-1){
-        // should be simpler, not partitioned
+        switch (add_edge(arg_a_int, arg_b_int)) {
+          case 400:
+            respond(c, 400, 0, "");
+          case 204:
+            respond(c, 204, 0, "");
+          case 200:
+            response = make_json_two("node_a_id", "node_b_id", 9, 9, arg_a_int, arg_b_int);
+            respond(c, 200, strlen(response), response);
+            free(response);
+        }
+        return;
       }
         
 
@@ -220,9 +230,6 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
 
       }
 
-
-
-
       // send operation to middle node
       int code = send_to_next(ADD_EDGE, arg_a_int, arg_b_int);
       // if acknowledgment code not OK (=200), respond without writing
@@ -257,9 +264,34 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       uint64_t arg_a_int = strtoll(tokens[index1 + 1].ptr, &endptr, 10);
       uint64_t arg_b_int = strtoll(tokens[index2 + 1].ptr, &endptr, 10);
 
-      // send operation to middle node
-      int code = send_to_next(REMOVE_EDGE, arg_a_int, arg_b_int);
+      // make sure youre on the right chain
+      if(!(arg_a_int %3 == CHAIN_NUM-1 || arg_b_int %3 == CHAIN_NUM-1 )){
+         badRequest(c);
+         return;
+      }
+
+      // one partition edge
+      if(arg_a_int %3 == CHAIN_NUM-1 && arg_b_int %3 == CHAIN_NUM-1){
+        if (remove_edge(arg_a_int, arg_b_int)) {
+          response = make_json_two("node_a_id", "node_b_id", 9, 9, arg_a_int, arg_b_int);
+          respond(c, 200, strlen(response), response);
+          free(response);;
+        } else {
+          respond(c, 400, 0, "");
+        }
+        return;
+      }
+
+      int arg_a_part = arg_a_int %3 +1;
+      int arg_b_part = arg_b_int %3 +1;
+      
+      (arg_a_part != CHAIN_NUM) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
+
+
+      // send operation to next node
+       int code = send_to_next(REMOVE_EDGE, arg_a_int, arg_b_int);
       // if acknowledgment code not OK (=200), respond without writing
+      
       if (code != 200) {
         respond(c, code, 0, "");
         return;
@@ -269,7 +301,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       if (remove_edge(arg_a_int, arg_b_int)) {
         response = make_json_two("node_a_id", "node_b_id", 9, 9, arg_a_int, arg_b_int);
         respond(c, 200, strlen(response), response);
-        free(response);;
+        free(response);
       } else {
         respond(c, 400, 0, "");
       }
@@ -351,12 +383,12 @@ int main(int argc, char** argv) {
 
   
 
-  // ensure correct number of arguments
-  // if (argc != 7) {
-  //   fprintf(stderr, 
-  //     "Usage: ./cs426_graph_server <graph_server_port> -p <partnum> -l <partlist> \n");
-  //   return 1;
-  // }
+  //ensure correct number of arguments
+  if (argc != 8) {
+    fprintf(stderr, 
+      "Usage: ./cs426_graph_server <graph_server_port> -p <partnum> -l <partlist> \n");
+    return 1;
+  }
 
   int cc;
   while ((cc = getopt (argc, argv, "p:l:")) != -1){
@@ -392,7 +424,7 @@ int main(int argc, char** argv) {
   IP_3 = argv[optind+2];
 
 
-  printf("%s -p %d -l %s %s %s\n", s_http_port, CHAIN_NUM, IP_1, IP_2, IP_3);
+  
   fprintf(stderr, "Chain num is %d\n", CHAIN_NUM);
 
   // find the rpc port of the current vm
