@@ -129,12 +129,13 @@ void protobuf_AddDesc_test_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\ntest.proto\022\006mutate\"\022\n\004Node\022\n\n\002id\030\001 \002(\003"
     "\"\"\n\004Edge\022\014\n\004id_a\030\001 \002(\003\022\014\n\004id_b\030\002 \002(\003\"\025\n\004"
-    "Code\022\r\n\004code\030\310\001 \002(\0052\277\001\n\007Mutator\022(\n\010add_n"
+    "Code\022\r\n\004code\030\310\001 \002(\0052\355\001\n\007Mutator\022(\n\010add_n"
     "ode\022\014.mutate.Node\032\014.mutate.Code\"\000\022+\n\013rem"
     "ove_node\022\014.mutate.Node\032\014.mutate.Code\"\000\022,"
     "\n\014add_edge_alt\022\014.mutate.Edge\032\014.mutate.Co"
     "de\"\000\022/\n\017remove_edge_alt\022\014.mutate.Edge\032\014."
-    "mutate.Code\"\000", 293);
+    "mutate.Code\"\000\022,\n\014get_node_alt\022\014.mutate.N"
+    "ode\032\014.mutate.Code\"\000", 339);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "test.proto", &protobuf_RegisterTypes);
   Node::default_instance_ = new Node();

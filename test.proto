@@ -40,6 +40,8 @@ service Mutator {
   rpc add_edge_alt(Edge) returns (Code) {}
 
   rpc remove_edge_alt(Edge) returns (Code) {}
+
+  rpc get_node_alt(Node) returns (Code) {}
 }
 
 // The request message containing the user's name.
