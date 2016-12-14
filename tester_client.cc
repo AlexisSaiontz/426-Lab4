@@ -20,6 +20,7 @@ extern int CHAIN_NUM;
 extern char* NEXT_IP;
 
 
+
 class MutatorClient {
 public:
   MutatorClient(std::shared_ptr<Channel> channel)
@@ -103,6 +104,25 @@ public:
       return 500;
     }
   }
+  int get_node(const uint64_t id) {
+    Node toGet;
+    toGet.set_id(id);
+
+    Code code;
+
+    ClientContext context;
+    // The actual RPC.
+    Status status = stub_->get_node_alt(&context, toGet, &code);
+    // if code == 200, it is in the graph. if it is 400, it is not in the graph.
+    // Act upon its status.
+    if (status.ok()) {
+      std::cout << "Code returned: " << code.code() << std::endl;
+      return code.code();
+    } else {
+      std::cout <<  "RPC failed" << std::endl;
+      return 500;
+    }
+  }
 private:
   std::unique_ptr<Mutator::Stub> stub_;
 
@@ -116,45 +136,28 @@ int send_to_next(const uint64_t opcode, const uint64_t id_a, const uint64_t id_b
 
   MutatorClient mutator(grpc::CreateChannel(
     (NEXT_IP), grpc::InsecureChannelCredentials()));
-
     int code;
-
-    switch (CHAIN_NUM) {
-      // head of the chain, client only
-      case 1:
-      switch(opcode) {
-        case ADD_NODE:
-        code = mutator.add_node(id_a);
-        break;
-        case REMOVE_NODE:
-        code = mutator.remove_node(id_a);
-        break;
-        case ADD_EDGE:
-        code = mutator.add_edge(id_a, id_b);
-        break;
-        case REMOVE_EDGE:
-        code = mutator.remove_edge(id_a, id_b);
-        break;
-      }
+    switch(opcode) {
+      case ADD_NODE:
+      code = mutator.add_node(id_a);
       break;
-      // middle of the chain, client & server
-      case 2:
-      switch(opcode) {
-        case ADD_NODE:
-        code = mutator.add_node(id_a);
-        break;
-        case REMOVE_NODE:
-        code = mutator.remove_node(id_a);
-        break;
-        case ADD_EDGE:
-        code = mutator.add_edge(id_a, id_b);
-        break;
-        case REMOVE_EDGE:
-        code = mutator.remove_edge(id_a, id_b);
-        break;
-      }
+      case REMOVE_NODE:
+      code = mutator.remove_node(id_a);
+      break;
+      case ADD_EDGE:
+      code = mutator.add_edge(id_a, id_b);
+      break;
+      case REMOVE_EDGE:
+      code = mutator.remove_edge(id_a, id_b);
+      break;
+      case GET_NODE:
+      code = mutator.get_node(id_a);
       break;
     }
+     
+     
+     
+    
 
     std::cout << "Client received status code: " << code << std::endl;
     return code;

@@ -15,9 +15,8 @@
 // #define IP_1 ("104.197.239.75:50051")
 // #define IP_2 ("104.197.113.28:50051")
 // #define IP_3 ("104.198.156.12:50051")
-#define RPC_PORT (":50051")
-#define B_FLAG ("-b")
- 
+
+
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -44,6 +43,8 @@ EXTERNC bool add_vertex(unsigned long);
 EXTERNC bool remove_vertex(unsigned long);
 EXTERNC int add_edge(unsigned long, unsigned long);
 EXTERNC bool remove_edge(unsigned long, unsigned long);
+EXTERNC bool get_node(unsigned long);
+
 #undef EXTERNC
 
 /*
@@ -165,6 +166,7 @@ uint64_t *get_neighbors(uint64_t id, int* n);
 #define ADD_EDGE (1)
 #define REMOVE_NODE (2)
 #define REMOVE_EDGE (3)
+#define GET_NODE (4)
 
 // Definition of a 20B superblock
 typedef struct superblock {

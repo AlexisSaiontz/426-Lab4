@@ -20,6 +20,7 @@ static const char* Mutator_method_names[] = {
   "/mutate.Mutator/remove_node",
   "/mutate.Mutator/add_edge_alt",
   "/mutate.Mutator/remove_edge_alt",
+  "/mutate.Mutator/get_node_alt",
 };
 
 std::unique_ptr< Mutator::Stub> Mutator::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -32,6 +33,7 @@ Mutator::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
   , rpcmethod_remove_node_(Mutator_method_names[1], ::grpc::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_add_edge_alt_(Mutator_method_names[2], ::grpc::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_remove_edge_alt_(Mutator_method_names[3], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_get_node_alt_(Mutator_method_names[4], ::grpc::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status Mutator::Stub::add_node(::grpc::ClientContext* context, const ::mutate::Node& request, ::mutate::Code* response) {
@@ -66,6 +68,14 @@ Mutator::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
   return new ::grpc::ClientAsyncResponseReader< ::mutate::Code>(channel_.get(), cq, rpcmethod_remove_edge_alt_, context, request);
 }
 
+::grpc::Status Mutator::Stub::get_node_alt(::grpc::ClientContext* context, const ::mutate::Node& request, ::mutate::Code* response) {
+  return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_get_node_alt_, context, request, response);
+}
+
+::grpc::ClientAsyncResponseReader< ::mutate::Code>* Mutator::Stub::Asyncget_node_altRaw(::grpc::ClientContext* context, const ::mutate::Node& request, ::grpc::CompletionQueue* cq) {
+  return new ::grpc::ClientAsyncResponseReader< ::mutate::Code>(channel_.get(), cq, rpcmethod_get_node_alt_, context, request);
+}
+
 Mutator::Service::Service() {
   (void)Mutator_method_names;
   AddMethod(new ::grpc::RpcServiceMethod(
@@ -88,6 +98,11 @@ Mutator::Service::Service() {
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Mutator::Service, ::mutate::Edge, ::mutate::Code>(
           std::mem_fn(&Mutator::Service::remove_edge_alt), this)));
+  AddMethod(new ::grpc::RpcServiceMethod(
+      Mutator_method_names[4],
+      ::grpc::RpcMethod::NORMAL_RPC,
+      new ::grpc::RpcMethodHandler< Mutator::Service, ::mutate::Node, ::mutate::Code>(
+          std::mem_fn(&Mutator::Service::get_node_alt), this)));
 }
 
 Mutator::Service::~Service() {
@@ -115,6 +130,13 @@ Mutator::Service::~Service() {
 }
 
 ::grpc::Status Mutator::Service::remove_edge_alt(::grpc::ServerContext* context, const ::mutate::Edge* request, ::mutate::Code* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status Mutator::Service::get_node_alt(::grpc::ServerContext* context, const ::mutate::Node* request, ::mutate::Code* response) {
   (void) context;
   (void) request;
   (void) response;

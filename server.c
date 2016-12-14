@@ -17,7 +17,12 @@ extern uint32_t tail;        // in-memory tail of the log
 
 int fd;
 int CHAIN_NUM;
+char * IP_1;
+char * IP_2;
+char * IP_3;
 char * NEXT_IP;
+char * RPC_PORT;
+
 
 // Responds to given connection with code and length bytes of body
 static void respond(struct mg_connection *c, int code, const int length, const char* body) {
@@ -123,19 +128,8 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       badRequest(c);
       return;
     }
-
-    if (strncmp(hm->uri.p, "/api/v1/checkpoint", hm->uri.len)){
-      find_id = find_json_token(tokens, arg_id);
-      find_a = find_json_token(tokens, arg_a);
-      find_b = find_json_token(tokens, arg_b);
-    }
-
     if (!strncmp(hm->uri.p, "/api/v1/add_node", hm->uri.len)) {
-      // if not head of chain
-      if (CHAIN_NUM != 1) {
-        respond(c, 400, 0, "");
-        return;
-      }
+    
       // body does not contain expected key
       if (find_id == 0) {
         badRequest(c);
@@ -146,31 +140,22 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       int index1 = argument_pos(tokens, arg_id);
       uint64_t arg_int = strtoll(tokens[index1 + 1].ptr, &endptr, 10);
 
-      // send operation to middle node
-      int code = send_to_next(ADD_NODE, arg_int, 0);
-      // if acknowledgment code not OK (=200), respond without writing
-      if (code != 200) {
-        respond(c, code, 0, "");
-        return;
+      if (arg_int% 3 != CHAIN_NUM-1){
+        badRequest(c);
       }
-
       // returns true if successfully added
-      if (add_vertex(arg_int)) {
+      else if (add_vertex(arg_int)) {
         response = make_json_one("node_id", 7, arg_int);
         respond(c, 200, strlen(response), response);
         free(response);
+
       } else {
         // vertex already existed
         respond(c, 204, 0, "");
       }
     }
     else if (!strncmp(hm->uri.p, "/api/v1/add_edge", hm->uri.len)) {
-      // if not head of chain
-      if (CHAIN_NUM != 1) {
-        respond(c, 400, 0, "");
-        return;
-      }
-
+      
       // body does not contain expected keys
       if (find_a == 0 || find_b == 0) {
         badRequest(c);
@@ -182,6 +167,61 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       int index2 = argument_pos(tokens, arg_b);
       uint64_t arg_a_int = strtoll(tokens[index1 + 1].ptr, &endptr, 10);
       uint64_t arg_b_int = strtoll(tokens[index2 + 1].ptr, &endptr, 10);
+
+      if(!(arg_a_int %3 == CHAIN_NUM-1 || arg_b_int %3 == CHAIN_NUM-1 )){
+         badRequest(c);
+         return;
+      }
+      if(arg_a_int %3 == CHAIN_NUM-1 && arg_b_int %3 == CHAIN_NUM-1){
+        // should be simpler, not partitioned
+      }
+        
+
+      int arg_a_part = arg_a_int %3 +1;
+      int arg_b_part = arg_b_int %3 +1;
+      
+      bool a_is_off = false;
+      int in_graph_code;
+      int add_code;
+
+
+      if (arg_a_part != CHAIN_NUM){
+        a_is_off = true;
+        if (arg_a_part == 2){
+          NEXT_IP = IP_2;
+        }
+        else NEXT_IP = IP_3;
+        in_graph_code = send_to_next(GET_NODE, arg_a_int, 0);
+        if (in_graph_code == 400){
+          respond(c, 400, 0, "");
+          return;
+        }
+       add_code = send_to_next(ADD_NODE, arg_b_int, 0);
+       if (add_code!=200){
+          // there is an error, fix it
+        }
+       add_vertex(arg_a_int);
+      }
+      else {
+        if (arg_b_part == 2){
+           NEXT_IP = IP_2;
+        }
+        else NEXT_IP = IP_3;
+        in_graph_code = send_to_next(GET_NODE, arg_b_int, 0);
+        if (in_graph_code == 400){
+          respond(c, 400, 0, "");
+          return;
+        }
+        add_code = send_to_next(ADD_NODE, arg_a_int, 0);
+        if (add_code!=200){
+          // there is an error, fix it
+        }
+        add_vertex(arg_b_int);
+
+      }
+
+
+
 
       // send operation to middle node
       int code = send_to_next(ADD_EDGE, arg_a_int, arg_b_int);
@@ -203,46 +243,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
         free(response);
       }
     }
-    else if (!strncmp(hm->uri.p, "/api/v1/remove_node", hm->uri.len)) {
-      // if not head of chain
-      if (CHAIN_NUM != 1) {
-        respond(c, 400, 0, "");
-        return;
-      }
-
-      // body does not contain expected key
-      if (find_id == 0) {
-        badRequest(c);
-        return;
-      }
-
-      // index of value
-      int index1 = argument_pos(tokens, arg_id);
-      uint64_t arg_int = strtoll(tokens[index1 + 1].ptr, &endptr, 10);
-
-      // send operation to middle node
-      int code = send_to_next(REMOVE_NODE, arg_int, 0);
-      // if acknowledgment code not OK (=200), respond without writing
-      if (code != 200) {
-        respond(c, code, 0, "");
-        return;
-      }
-
-      // if node does not exist
-      if (remove_vertex(arg_int)) {
-        response = make_json_one("node_id", 7, arg_int);
-        respond(c, 200, strlen(response), response);
-        free(response);
-      } else {
-        respond(c, 400, 0, "");
-      }
-    }
     else if (!strncmp(hm->uri.p, "/api/v1/remove_edge", hm->uri.len)) {
-      // if not head of chain
-      if (CHAIN_NUM != 1) {
-        respond(c, 400, 0, "");
-        return;
-      }
 
       // body does not contain expected keys
       if (find_a == 0 || find_b == 0) {
@@ -283,10 +284,15 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       int index1 = argument_pos(tokens, arg_id);
       long long arg_int = strtoll(tokens[index1 + 1].ptr, &endptr, 10);
 
-      bool in_graph = get_node(arg_int);
-      response = make_json_one("in_graph", 8, in_graph);
-      respond(c, 200, strlen(response), response);
-      free(response);
+      if (arg_int% 3 == CHAIN_NUM-1){
+        bool in_graph = get_node(arg_int);
+        response = make_json_one("in_graph", 8, in_graph);
+        respond(c, 200, strlen(response), response);
+        free(response);
+      }
+      else{
+        badRequest(c);
+      }
     }
     else if(!strncmp(hm->uri.p, "/api/v1/get_edge", hm->uri.len)) {
       // body does not contain expected keys
@@ -335,59 +341,6 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       }
 
     }
-    else if(!strncmp(hm->uri.p, "/api/v1/shortest_path", hm->uri.len)) {
-      // body does not contain expected keys
-      if(find_a == 0 || find_b == 0) {
-        badRequest(c);
-        return;
-      }
-
-      // index of values
-      int index1 = argument_pos(tokens, arg_a);
-      int index2 = argument_pos(tokens, arg_b);
-      long long arg_a_int = strtoll(tokens[index1 + 1].ptr, &endptr, 10);
-      long long arg_b_int = strtoll(tokens[index2 + 1].ptr, &endptr, 10);
-
-      // if either node does not exist
-      if(!ret_vertex(arg_a_int) || !ret_vertex(arg_b_int)) {
-        respond(c, 400, 0, "");
-      } else {
-        int path = shortest_path(arg_a_int, arg_b_int);
-        if (path == -1) {
-          respond(c, 204, 0, "");
-        } else {
-          response = make_json_one("distance", 8, path);
-          respond(c, 200, strlen(response), response);
-          free(response);
-        }
-      }
-    }
-    else if(!strncmp(hm->uri.p, "/api/v1/checkpoint", hm->uri.len)) {
-
-      int nsize = map.nsize;
-      int esize = map.esize;
-      if ((CHECKPOINT_HEADER + nsize*(CHECKPOINT_NODE)
-      + esize*(CHECKPOINT_EDGE)) > CHECKPOINT_AREA){
-        respond(c, 507, 0, "");
-
-      }
-      else {
-        checkpoint_area *flat_graph = (checkpoint_area *) malloc(sizeof(struct checkpoint_area));
-
-        uint64_t *nodes = (uint64_t *) malloc(sizeof(uint64_t) * nsize);
-        mem_edge *edges = (mem_edge *) malloc(sizeof(struct mem_edge) * esize);
-
-        flat_graph->nsize = nsize;
-        flat_graph->esize = esize;
-        flat_graph->nodes = nodes;
-        flat_graph->edges = edges;
-
-        make_checkpoint(flat_graph);
-        docheckpoint(flat_graph);
-        checkpoint_area *loaded = get_checkpoint();
-        respond(c, 200, 0, "");
-      }
-    }
     else {
       respond(c, 400, 0, "");
     }
@@ -396,54 +349,60 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
 
 int main(int argc, char** argv) {
 
-  bool ip = false; // is there an ip address flag?
-  int ip_num;
-  int http_num;
+  
 
   // ensure correct number of arguments
-  if (argc != 4 && argc != 2) {
-    fprintf(stderr, "Usage: ./cs426_graph_server -b <ipaddress> <portbnum> \n");
+  // if (argc != 7) {
+  //   fprintf(stderr, 
+  //     "Usage: ./cs426_graph_server <graph_server_port> -p <partnum> -l <partlist> \n");
+  //   return 1;
+  // }
+
+  int cc;
+  while ((cc = getopt (argc, argv, "p:l:")) != -1){
+    switch (cc)
+    {
+      case 'p':
+        CHAIN_NUM = atoi(optarg);
+        break;
+      case 'l':
+        IP_1 = optarg;
+        break;
+      case '?':
+        if (optopt == 'p')
+          fprintf(stderr, "Option -%c requires an argument. \n", optopt);
+        else if (isprint (optopt))
+          fprintf(stderr, "Unknown option '-%c'.\n", optopt);
+        else
+          fprintf (stderr,
+            "Unknown option character `\\x%x'.\n",
+            optopt);
+        return 1;
+      default:
+        abort ();
+      }
+  }
+  if (argc - optind != 3) {
+    fprintf(stderr, "Incorrect number of arguments\n");
     return 1;
   }
-  if (argc==4){
-    ip = true;
-    // is the first argument the -b flag?
-    if (!strcmp(B_FLAG, argv[1])){
-      ip_num = 2;
-      http_num = 3;
-    }
-    // is the second argument the -b flag?
-    else if (!strcmp(B_FLAG, argv[2])){
-      // set indexes appropriately
-      ip_num = 3;
-      http_num = 1;
-    }
-    // there should be a -b flag, but it is not in the right place
-    // or does not exist
-    else {
-      fprintf(stderr, "Usage: ./cs426_graph_server -b <ipaddress> <portbnum> \n");
-      return 1;
-    }
-  }
+   
+  char *s_http_port = argv[optind];
+  IP_2 = argv[optind+1];
+  IP_3 = argv[optind+2];
 
-  const char *ipaddress;
-  const char *s_http_port;
 
-  if (ip){
-    NEXT_IP = malloc(sizeof(char)*(strlen(RPC_PORT) + strlen(argv[ip_num])));
-    strcpy(NEXT_IP, argv[ip_num]);
-    strcat(NEXT_IP, RPC_PORT);
-    s_http_port = argv[http_num];
-  }
-  //there is no -b flag, so only the port number is given
-  else {
-    s_http_port = argv[1];
-  }
-
-  // get chain_num from environment
-  CHAIN_NUM = atoi(getenv("CHAIN_NUM"));
+  printf("%s -p %d -l %s %s %s\n", s_http_port, CHAIN_NUM, IP_1, IP_2, IP_3);
   fprintf(stderr, "Chain num is %d\n", CHAIN_NUM);
 
+  // find the rpc port of the current vm
+  if (CHAIN_NUM == 2){
+   RPC_PORT = strchr(IP_2, ':');
+
+  }
+  if (CHAIN_NUM == 3){
+   RPC_PORT = strchr(IP_3, ':');
+  }
   struct mg_mgr mgr;
   struct mg_connection *c;
 
