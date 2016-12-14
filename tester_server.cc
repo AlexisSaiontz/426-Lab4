@@ -43,44 +43,6 @@ class TesterService final : public Mutator::Service {
     Status remove_node(ServerContext* context, const Node* node,
       Code* reply) override {
       // this won't be used so get rid of it
-
-
-        // bool result;
-        // int r_code;
-        // switch(CHAIN_NUM) {
-        //   case 2: {
-        //     // First make request to tail
-        //     r_code = send_to_next(REMOVE_NODE, node->id(), 0);
-        //     // 500 is designated for RPC failures
-        //     if (r_code == 500) {
-        //       reply->set_code(500);
-        //       return Status::CANCELLED;
-        //     }
-        //     // Apply change and reply
-        //     result = remove_vertex(node->id());
-        //     if (result) {
-        //       printf("Removed node %d\n", (int) node->id());
-        //       reply->set_code(200);
-        //     } else {
-        //       reply->set_code(400);
-        //     }
-        //     if (reply->code() != r_code){
-        //       fprintf(stderr, "SOMETHING BAD HAPPENED! \n");
-        //     }
-        //     return Status::OK;
-        //   }
-        //   case 3: {
-        //     // Apply change and reply
-        //     result = remove_vertex(node->id());
-        //     if (result) {
-        //       printf("Removed node %d\n", (int) node->id());
-        //       reply->set_code(200);
-        //     } else {
-        //       reply->set_code(400);
-        //     }
-        //     return Status::OK;
-        //   }
-        // }
       }
 
       Status add_edge_alt(ServerContext* context, const Edge* edge,
@@ -139,6 +101,7 @@ class TesterService final : public Mutator::Service {
           strcpy(address, "0.0.0.0");
           strcat(address, RPC_PORT);
         
+
           TesterService service;
 
           ServerBuilder builder;
@@ -154,3 +117,4 @@ class TesterService final : public Mutator::Service {
           // responsible for shutting down the server for this call to ever return.
           server->Wait();
         }
+      
