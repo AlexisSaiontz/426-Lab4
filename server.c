@@ -129,7 +129,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       return;
     }
     if (!strncmp(hm->uri.p, "/api/v1/add_node", hm->uri.len)) {
-      printf("%s\n", "here" );
+  
       // body does not contain expected key
       if (find_id == 0) {
         badRequest(c);
@@ -275,7 +275,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
         if (remove_edge(arg_a_int, arg_b_int)) {
           response = make_json_two("node_a_id", "node_b_id", 9, 9, arg_a_int, arg_b_int);
           respond(c, 200, strlen(response), response);
-          free(response);;
+          free(response);
         } else {
           respond(c, 400, 0, "");
         }
@@ -339,15 +339,39 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       long long arg_a_int = strtoll(tokens[index1 + 1].ptr, &endptr, 10);
       long long arg_b_int = strtoll(tokens[index2 + 1].ptr, &endptr, 10);
 
-      if (!get_node(arg_a_int) || !get_node(arg_b_int)){
-        respond(c, 400, 0, "");
-      }
-      else {
-        bool in_graph = get_edge(arg_a_int, arg_b_int);
-        response = make_json_one("in_graph", 8, in_graph);
-        respond(c, 200, strlen(response), response);
-        free(response);
-      }
+      int arg_a_part = arg_a_int %3 +1;
+      int arg_b_part = arg_b_int %3 +1;
+      
+      
+
+        if (!get_node(arg_a_int) || !get_node(arg_b_int)){
+           // make sure youre on the right chain
+          
+          if(arg_a_part == CHAIN_NUM && arg_b_part== CHAIN_NUM){
+             badRequest(c);
+             return;
+          }
+          if (arg_a_part != CHAIN_NUM){
+            (arg_a_part == 2) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
+           if(400 ==send_to_next(GET_NODE, arg_a_int, 0)){
+            respond(c, 400, 0, "");
+            return;
+           }
+         }
+         else{
+            (arg_b_part == 2) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
+           if(400 ==send_to_next(GET_NODE, arg_b_int, 0)){
+            respond(c, 400, 0, "");
+            return;
+           }
+         }
+       }
+  
+      bool in_graph = get_edge(arg_a_int, arg_b_int);
+      response = make_json_one("in_graph", 8, in_graph);
+      respond(c, 200, strlen(response), response);
+      free(response);
+      
     }
     else if(!strncmp(hm->uri.p, "/api/v1/get_neighbors", hm->uri.len)) {
       // body does not contain expected key
