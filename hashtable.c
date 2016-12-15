@@ -219,6 +219,7 @@ int add_edge(uint64_t a, uint64_t b) {
 
 // Removes edge, returns false if it didn't exist
 bool remove_edge(uint64_t a, uint64_t b) {
+	printf("%s\n","here////" );
 	vertex** table = map.table;
 	
 	vertex* v1 = table[hash_vertex(a)];
