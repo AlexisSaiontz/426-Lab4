@@ -266,7 +266,6 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
 
       // make sure youre on the right chain
       if(!(arg_a_int %3 == CHAIN_NUM-1 || arg_b_int %3 == CHAIN_NUM-1 )){
-
          badRequest(c);
          return;
       }
@@ -286,7 +285,21 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       int arg_a_part = arg_a_int %3 +1;
       int arg_b_part = arg_b_int %3 +1;
       
-      (arg_a_part != CHAIN_NUM) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
+
+      
+      if (arg_a_part != CHAIN_NUM){
+        if (arg_a_part == 2){
+          NEXT_IP = IP_2;
+        }
+        else NEXT_IP = IP_3;
+       
+      }
+      else {
+        if (arg_b_part == 2){
+           NEXT_IP = IP_2;
+        }
+        else NEXT_IP = IP_3;
+      }
 
 
       // send operation to next node
