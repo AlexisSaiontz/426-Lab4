@@ -65,6 +65,13 @@ class TesterService final : public Mutator::Service {
             printf("Received: Remove edge %d - %d\n", (int) edge->id_a(), (int) edge->id_b());
             bool result;
             int r_code;
+            if(!get_node(edge->id_a())){
+              printf("no node: %d\n", (int) edge->id_a());
+            }
+            if(!get_node(edge->id_b())){
+              printf("no node: %d\n", (int) edge->id_b());
+            }
+
             // Apply change and reply
             result = remove_edge(edge->id_a(), edge->id_b());
             if (result) {

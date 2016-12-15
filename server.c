@@ -251,7 +251,6 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       }
     }
     else if (!strncmp(hm->uri.p, "/api/v1/remove_edge", hm->uri.len)) {
-
       // body does not contain expected keys
       if (find_a == 0 || find_b == 0) {
         badRequest(c);
@@ -285,7 +284,21 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       int arg_a_part = arg_a_int %3 +1;
       int arg_b_part = arg_b_int %3 +1;
       
-      (arg_a_part != CHAIN_NUM) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
+
+      
+      if (arg_a_part != CHAIN_NUM){
+        if (arg_a_part == 2){
+          NEXT_IP = IP_2;
+        }
+        else NEXT_IP = IP_3;
+       
+      }
+      else {
+        if (arg_b_part == 2){
+           NEXT_IP = IP_2;
+        }
+        else NEXT_IP = IP_3;
+      }
 
 
       // send operation to next node
@@ -303,6 +316,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
         respond(c, 200, strlen(response), response);
         free(response);
       } else {
+
         respond(c, 400, 0, "");
       }
     }

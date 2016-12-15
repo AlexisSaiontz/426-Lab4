@@ -154,10 +154,6 @@ int send_to_next(const uint64_t opcode, const uint64_t id_a, const uint64_t id_b
       code = mutator.get_node(id_a);
       break;
     }
-     
-     
-     
-    
 
     std::cout << "Client received status code: " << code << std::endl;
     return code;
