@@ -78,7 +78,6 @@ class TesterService final : public Mutator::Service {
               printf("Removed edge %d, %d\n", (int) edge->id_a(), (int) edge->id_b());
               reply->set_code(200);
             } else {
-              printf("%s\n", "here!?" );
               reply->set_code(400);
             }
             return Status::OK;

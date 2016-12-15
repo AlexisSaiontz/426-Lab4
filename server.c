@@ -251,7 +251,6 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       }
     }
     else if (!strncmp(hm->uri.p, "/api/v1/remove_edge", hm->uri.len)) {
-      printf("%s\n","here!" );
       // body does not contain expected keys
       if (find_a == 0 || find_b == 0) {
         badRequest(c);

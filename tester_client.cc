@@ -93,7 +93,6 @@ public:
 
     ClientContext context;
     // The actual RPC.
-    printf("%s\n", "!!!" );
     Status status = stub_->remove_edge_alt(&context, toRem, &code);
 
     // Act upon its status.
