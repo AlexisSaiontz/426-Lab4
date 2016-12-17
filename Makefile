@@ -16,7 +16,7 @@ EXE = cs426_graph_server
 HDRS = mongoose.h headers.h test.grpc.pb.h test.pb.h
 
 # space-separated list of source files
-SRCS = mongoose.c hashtable.c checkpoint.c server.c
+SRCS = mongoose.c hashtable.c server.c
 
 # automatically generated list of object files
 OBJS = $(SRCS:.c=.o) test.pb.o test.grpc.pb.o tester_client.o tester_server.o
