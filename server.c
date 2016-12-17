@@ -22,7 +22,7 @@ char * IP_2;
 char * IP_3;
 char * NEXT_IP;
 char * RPC_PORT;
-
+pthread_mutex_t mt;
 
 // Responds to given connection with code and length bytes of body
 static void respond(struct mg_connection *c, int code, const int length, const char* body) {
@@ -129,13 +129,15 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       return;
     }
     if (!strncmp(hm->uri.p, "/api/v1/add_node", hm->uri.len)) {
-  
+ sleep(5); 
       // body does not contain expected key
       if (find_id == 0) {
         badRequest(c);
         return;
       }
-
+	
+pthread_mutex_lock(&mt);
+sleep(5);
       // index of value
       int index1 = argument_pos(tokens, arg_id);
       uint64_t arg_int = strtoll(tokens[index1 + 1].ptr, &endptr, 10);
@@ -162,6 +164,8 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
         return;
       }
 
+pthread_mutex_lock(&mt);
+
       // index of values
       int index1 = argument_pos(tokens, arg_a);
       int index2 = argument_pos(tokens, arg_b);
@@ -170,6 +174,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
 
       if(!(arg_a_int %3 == CHAIN_NUM-1 || arg_b_int %3 == CHAIN_NUM-1 )){
          badRequest(c);
+pthread_mutex_unlock(&mt);
          return;
       }
       if(arg_a_int %3 == CHAIN_NUM-1 && arg_b_int %3 == CHAIN_NUM-1){
@@ -183,6 +188,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             respond(c, 200, strlen(response), response);
             free(response);
         }
+pthread_mutex_unlock(&mt);
         return;
       }
         
@@ -204,6 +210,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
         in_graph_code = send_to_next(GET_NODE, arg_a_int, 0);
         if (in_graph_code == 400){
           respond(c, 400, 0, "");
+pthread_mutex_unlock(&mt);
           return;
         }
        add_code = send_to_next(ADD_NODE, arg_b_int, 0);
@@ -220,6 +227,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
         in_graph_code = send_to_next(GET_NODE, arg_b_int, 0);
         if (in_graph_code == 400){
           respond(c, 400, 0, "");
+pthread_mutex_lock(&mt);
           return;
         }
         add_code = send_to_next(ADD_NODE, arg_a_int, 0);
@@ -235,6 +243,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       // if acknowledgment code not OK (=200), respond without writing
       if (code != 200) {
         respond(c, code, 0, "");
+pthread_mutex_lock(&mt);
         return;
       }
 
@@ -249,6 +258,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
         respond(c, 200, strlen(response), response);
         free(response);
       }
+pthread_mutex_lock(&mt);
     }
     else if (!strncmp(hm->uri.p, "/api/v1/remove_edge", hm->uri.len)) {
       // body does not contain expected keys

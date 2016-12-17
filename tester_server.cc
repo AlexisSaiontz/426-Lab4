@@ -20,12 +20,17 @@ using mutate::Mutator;
 extern int CHAIN_NUM;
 extern char* NEXT_IP;
 extern char* RPC_PORT;
+extern pthread_mutex_t mt;
+
 
 // define the service class.
 class TesterService final : public Mutator::Service {
 
   Status add_node(ServerContext* context, const Node* node,
     Code* reply) override {
+
+	pthread_mutex_lock(&mt);
+
       bool result;
       int r_code;
       // Apply change and reply
@@ -36,11 +41,16 @@ class TesterService final : public Mutator::Service {
       } else {
         reply->set_code(204);
       }
+
+	pthread_mutex_unlock(&mt); 
       return Status::OK; 
     }
   
       Status add_edge_alt(ServerContext* context, const Edge* edge,
         Code* reply) override {
+
+	pthread_mutex_lock(&mt);
+
           printf("Received: Add edge %d - %d\n", (int) edge->id_a(), (int) edge->id_b());
           int result;
           int r_code;   
@@ -52,10 +62,17 @@ class TesterService final : public Mutator::Service {
           } else {
             reply->set_code(result);
           }
+
+	pthread_mutex_unlock(&mt);
+
           return Status::OK;
         }
+
         Status remove_edge_alt(ServerContext* context, const Edge* edge,
           Code* reply) override {
+
+	pthread_mutex_lock(&mt);
+
             printf("Received: Remove edge %d - %d\n", (int) edge->id_a(), (int) edge->id_b());
             bool result;
             int r_code;
@@ -74,11 +91,18 @@ class TesterService final : public Mutator::Service {
             } else {
               reply->set_code(400);
             }
+
+	pthread_mutex_unlock(&mt);
+
             return Status::OK;
             
           }
+
         Status get_node_alt(ServerContext* context, const Node* node,
           Code* reply) override {
+
+	pthread_mutex_lock(&mt);
+
             bool result;
             int r_code;
        
@@ -89,6 +113,9 @@ class TesterService final : public Mutator::Service {
             } else {
               reply->set_code(400);
             }
+
+	pthread_mutex_unlock(&mt);
+
             return Status::OK;
           }
                

@@ -18,7 +18,7 @@
 
 // global hashtable for vertices
 vertex_map map;
-pthread_mutex_t mt;
+
 
 // Returns hash value
 int hash_vertex(uint64_t id) {
@@ -44,8 +44,8 @@ vertex *ret_vertex(uint64_t id) {
 // Adds vertex, returns false is vertex existed
 bool add_vertex(uint64_t id) {
 
-	pthread_mutex_lock(&mt);	
-sleep(20);
+	
+
 	int hash = hash_vertex(id);
 	vertex** table = map.table;
 
@@ -62,7 +62,7 @@ sleep(20);
 	table[hash] = new;
 	map.nsize += 1;
 
-	pthread_mutex_unlock(&mt); 
+
 
 	return true;
 }
@@ -121,13 +121,13 @@ bool remove_vertex(uint64_t id) {
 // Check if a vertex is in a graph. 
 bool get_node(uint64_t id){
 	
-	pthread_mutex_lock(&mt);
+
 
 	if (ret_vertex(id) == NULL){
 		return false;
 	}
 
-	pthread_mutex_unlock(&mt); 
+
 
 	return true;
 }
@@ -135,15 +135,15 @@ bool get_node(uint64_t id){
 // Check if an edge is in a graph 
 bool get_edge(uint64_t a, uint64_t b){
 
-	pthread_mutex_lock(&mt);
+
 
 	vertex *v1 = ret_vertex(a);
 	vertex *v2 = ret_vertex(b);
 	if (LL_contains(&(v1->head), b) && LL_contains(&(v2->head), a)){
-		pthread_mutex_unlock(&mt);
+		
 		return true;
 	}
-	pthread_mutex_unlock(&mt);
+
 	return false;
 }
 
@@ -210,7 +210,7 @@ bool LL_delete(edge** head, uint64_t n)
 // Adds edge, returns 
 int add_edge(uint64_t a, uint64_t b) {
 
-	pthread_mutex_lock(&mt);
+
 
 	vertex** table = map.table;
 
@@ -230,26 +230,26 @@ int add_edge(uint64_t a, uint64_t b) {
 
 	// code 400
 	if(!v1 || !v2 || a == b){
-		pthread_mutex_unlock(&mt);
+
 		 return 400;
 	}
 
 	if(LL_contains(&(v1->head), b)) {
-		pthread_mutex_unlock(&mt); 
+
 		return 204;
 	}
 	LL_insert(&(v1->head), b);
 	LL_insert(&(v2->head), a);
 	map.esize += 1;
 	
-	pthread_mutex_unlock(&mt); 
+
 	return 200;
 }
 
 // Removes edge, returns false if it didn't exist
 bool remove_edge(uint64_t a, uint64_t b) {
 
-	pthread_mutex_lock(&mt);
+
 
 	vertex** table = map.table;
 	
@@ -269,12 +269,12 @@ bool remove_edge(uint64_t a, uint64_t b) {
 
 	// can't remove edge
 	if(!v1 || !v2) {
-		pthread_mutex_unlock(&mt); 
+
 		return false;
 	}
 	map.esize -= 1;
 	bool r = LL_delete(&(v1->head), b) && LL_delete(&(v2->head), a);
-	pthread_mutex_unlock(&mt);
+
 	return r;
 }
 
