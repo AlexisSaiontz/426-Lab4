@@ -175,6 +175,12 @@ pthread_mutex_lock(&mt);
 pthread_mutex_unlock(&mt);
          return;
       }
+      if((arg_a_int %3 == CHAIN_NUM-1 && !(get_node(arg_a_int)))
+        ||((arg_b_int %3 == CHAIN_NUM-1 ) && !get_node(arg_b_int))){
+         badRequest(c);
+         pthread_mutex_unlock(&mt);
+         return;
+      }
       if(arg_a_int %3 == CHAIN_NUM-1 && arg_b_int %3 == CHAIN_NUM-1){
         switch (add_edge(arg_a_int, arg_b_int)) {
           case 400:
