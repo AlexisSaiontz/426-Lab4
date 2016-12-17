@@ -39,12 +39,6 @@ class TesterService final : public Mutator::Service {
       return Status::OK; 
     }
   
-
-    Status remove_node(ServerContext* context, const Node* node,
-      Code* reply) override {
-      // this won't be used so get rid of it
-      }
-
       Status add_edge_alt(ServerContext* context, const Edge* edge,
         Code* reply) override {
           printf("Received: Add edge %d - %d\n", (int) edge->id_a(), (int) edge->id_b());
