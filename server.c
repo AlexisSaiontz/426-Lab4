@@ -129,7 +129,6 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
       return;
     }
     if (!strncmp(hm->uri.p, "/api/v1/add_node", hm->uri.len)) {
- sleep(5); 
       // body does not contain expected key
       if (find_id == 0) {
         badRequest(c);
@@ -155,6 +154,7 @@ sleep(5);
         // vertex already existed
         respond(c, 204, 0, "");
       }
+pthread_mutex_unlock(&mt);
     }
     else if (!strncmp(hm->uri.p, "/api/v1/add_edge", hm->uri.len)) {
       
@@ -164,7 +164,7 @@ sleep(5);
         return;
       }
 
-pthread_mutex_lock(&mt);
+//pthread_mutex_lock(&mt);
 
       // index of values
       int index1 = argument_pos(tokens, arg_a);
@@ -174,7 +174,7 @@ pthread_mutex_lock(&mt);
 
       if(!(arg_a_int %3 == CHAIN_NUM-1 || arg_b_int %3 == CHAIN_NUM-1 )){
          badRequest(c);
-pthread_mutex_unlock(&mt);
+//pthread_mutex_unlock(&mt);
          return;
       }
       if(arg_a_int %3 == CHAIN_NUM-1 && arg_b_int %3 == CHAIN_NUM-1){
@@ -188,7 +188,7 @@ pthread_mutex_unlock(&mt);
             respond(c, 200, strlen(response), response);
             free(response);
         }
-pthread_mutex_unlock(&mt);
+//pthread_mutex_unlock(&mt);
         return;
       }
         
@@ -210,7 +210,7 @@ pthread_mutex_unlock(&mt);
         in_graph_code = send_to_next(GET_NODE, arg_a_int, 0);
         if (in_graph_code == 400){
           respond(c, 400, 0, "");
-pthread_mutex_unlock(&mt);
+//pthread_mutex_unlock(&mt);
           return;
         }
        add_code = send_to_next(ADD_NODE, arg_b_int, 0);
@@ -227,7 +227,7 @@ pthread_mutex_unlock(&mt);
         in_graph_code = send_to_next(GET_NODE, arg_b_int, 0);
         if (in_graph_code == 400){
           respond(c, 400, 0, "");
-pthread_mutex_lock(&mt);
+//pthread_mutex_lock(&mt);
           return;
         }
         add_code = send_to_next(ADD_NODE, arg_a_int, 0);
@@ -243,7 +243,7 @@ pthread_mutex_lock(&mt);
       // if acknowledgment code not OK (=200), respond without writing
       if (code != 200) {
         respond(c, code, 0, "");
-pthread_mutex_lock(&mt);
+//pthread_mutex_lock(&mt);
         return;
       }
 
@@ -258,7 +258,7 @@ pthread_mutex_lock(&mt);
         respond(c, 200, strlen(response), response);
         free(response);
       }
-pthread_mutex_lock(&mt);
+//pthread_mutex_lock(&mt);
     }
     else if (!strncmp(hm->uri.p, "/api/v1/remove_edge", hm->uri.len)) {
       // body does not contain expected keys
