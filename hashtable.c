@@ -45,7 +45,7 @@ vertex *ret_vertex(uint64_t id) {
 bool add_vertex(uint64_t id) {
 
 	pthread_mutex_lock(&mt);	
-
+sleep(20);
 	int hash = hash_vertex(id);
 	vertex** table = map.table;
 
