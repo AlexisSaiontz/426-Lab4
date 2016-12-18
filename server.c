@@ -161,7 +161,6 @@ pthread_mutex_unlock(&mt);
         badRequest(c);
         return;
       }
-
 pthread_mutex_lock(&mt);
 
       // index of values
@@ -172,11 +171,11 @@ pthread_mutex_lock(&mt);
 
       if(!(arg_a_int %3 == CHAIN_NUM-1 || arg_b_int %3 == CHAIN_NUM-1 )){
          badRequest(c);
-pthread_mutex_unlock(&mt);
+        pthread_mutex_unlock(&mt);
          return;
       }
       if((arg_a_int %3 == CHAIN_NUM-1 && !(get_node(arg_a_int)))
-        ||((arg_b_int %3 == CHAIN_NUM-1 ) && !get_node(arg_b_int))){
+        ||((arg_b_int %3 == CHAIN_NUM-1) && !(get_node(arg_b_int)))) {
          badRequest(c);
          pthread_mutex_unlock(&mt);
          return;
@@ -363,7 +362,7 @@ pthread_mutex_unlock(&mt);
         badRequest(c);
         return;
       }
-pthread_mutex_lock(&mt);
+      pthread_mutex_lock(&mt);
       // index of values
       int index1 = argument_pos(tokens, arg_a);
       int index2 = argument_pos(tokens, arg_b);
@@ -373,37 +372,50 @@ pthread_mutex_lock(&mt);
       int arg_a_part = arg_a_int %3 +1;
       int arg_b_part = arg_b_int %3 +1;
       
-        if (!get_node(arg_a_int) || !get_node(arg_b_int)){
-           // make sure youre on the right chain
-          
-          if(arg_a_part == CHAIN_NUM && arg_b_part== CHAIN_NUM){
-             badRequest(c);
-pthread_mutex_unlock(&mt);
-             return;
-          }
-          if (arg_a_part != CHAIN_NUM){
-            (arg_a_part == 2) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
-           if(400 ==send_to_next(GET_NODE, arg_a_int, 0)){
-            respond(c, 400, 0, "");
-pthread_mutex_unlock(&mt);
-            return;
-           }
-         }
-         else{
-            (arg_b_part == 2) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
-           if(400 ==send_to_next(GET_NODE, arg_b_int, 0)){
-            respond(c, 400, 0, "");
-pthread_mutex_unlock(&mt);
-            return;
-           }
+      if (arg_a_part == CHAIN_NUM){
+        if (!(get_node(arg_a_int))){
+           badRequest(c);
+           pthread_mutex_unlock(&mt);
+           return;
+        }
+      }
+      if (arg_b_part == CHAIN_NUM){
+        if (!(get_node(arg_b_int))){
+           badRequest(c);
+           pthread_mutex_unlock(&mt);
+           return;
+        }
+      }
+
+      if (!get_node(arg_a_int) || !get_node(arg_b_int)){
+         // make sure youre on the right chain
+        
+        
+        if (arg_a_part != CHAIN_NUM){
+          (arg_a_part == 2) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
+         if(400 ==send_to_next(GET_NODE, arg_a_int, 0)){
+          respond(c, 400, 0, "");
+          pthread_mutex_unlock(&mt);
+          return;
          }
        }
-  
-      bool in_graph = get_edge(arg_a_int, arg_b_int);
+       else{
+          (arg_b_part == 2) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
+         if(400 ==send_to_next(GET_NODE, arg_b_int, 0)){
+          respond(c, 400, 0, "");
+          pthread_mutex_unlock(&mt);
+          return;
+         }
+       }
+     }
+     bool in_graph = false;
+      if(get_node(arg_a_int)&& get_node(arg_b_int) ){
+        bool in_graph = get_edge(arg_a_int, arg_b_int);
+      }
       response = make_json_one("in_graph", 8, in_graph);
       respond(c, 200, strlen(response), response);
       free(response);
-pthread_mutex_unlock(&mt);
+      pthread_mutex_unlock(&mt);
     }
     else if(!strncmp(hm->uri.p, "/api/v1/get_neighbors", hm->uri.len)) {
       // body does not contain expected key
