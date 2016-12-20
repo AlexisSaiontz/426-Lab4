@@ -161,7 +161,7 @@ pthread_mutex_unlock(&mt);
         badRequest(c);
         return;
       }
-pthread_mutex_lock(&mt);
+      pthread_mutex_lock(&mt);
 
       // index of values
       int index1 = argument_pos(tokens, arg_a);
@@ -191,7 +191,7 @@ pthread_mutex_lock(&mt);
             respond(c, 200, strlen(response), response);
             free(response);
         }
-pthread_mutex_unlock(&mt);
+        pthread_mutex_unlock(&mt);
         return;
       }
 
@@ -211,7 +211,7 @@ pthread_mutex_unlock(&mt);
         in_graph_code = send_to_next(GET_NODE, arg_a_int, 0);
         if (in_graph_code == 400){
           respond(c, 400, 0, "");
-pthread_mutex_unlock(&mt);
+          pthread_mutex_unlock(&mt);
           return;
         }
        add_code = send_to_next(ADD_NODE, arg_b_int, 0);
@@ -228,7 +228,7 @@ pthread_mutex_unlock(&mt);
         in_graph_code = send_to_next(GET_NODE, arg_b_int, 0);
         if (in_graph_code == 400){
           respond(c, 400, 0, "");
-pthread_mutex_unlock(&mt);
+          pthread_mutex_unlock(&mt);
           return;
         }
         add_code = send_to_next(ADD_NODE, arg_a_int, 0);
@@ -244,7 +244,7 @@ pthread_mutex_unlock(&mt);
       // if acknowledgment code not OK (=200), respond without writing
       if (code != 200) {
         respond(c, code, 0, "");
-pthread_mutex_unlock(&mt);
+        pthread_mutex_unlock(&mt);
         return;
       }
 
@@ -371,6 +371,9 @@ pthread_mutex_unlock(&mt);
 
       int arg_a_part = arg_a_int %3 +1;
       int arg_b_part = arg_b_int %3 +1;
+
+      bool a_in = false;
+      bool b_in = false;
       
       if (arg_a_part == CHAIN_NUM){
         if (!(get_node(arg_a_int))){
@@ -378,6 +381,7 @@ pthread_mutex_unlock(&mt);
            pthread_mutex_unlock(&mt);
            return;
         }
+        else a_in = true;
       }
       if (arg_b_part == CHAIN_NUM){
         if (!(get_node(arg_b_int))){
@@ -385,33 +389,34 @@ pthread_mutex_unlock(&mt);
            pthread_mutex_unlock(&mt);
            return;
         }
-      }
+        else b_in = true;
+      }      
 
-      if (!get_node(arg_a_int) || !get_node(arg_b_int)){
-         // make sure youre on the right chain
-        
-        
-        if (arg_a_part != CHAIN_NUM){
-          (arg_a_part == 2) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
-         if(400 ==send_to_next(GET_NODE, arg_a_int, 0)){
-          respond(c, 400, 0, "");
-          pthread_mutex_unlock(&mt);
-          return;
-         }
+      if (arg_a_part != CHAIN_NUM){
+        (arg_a_part == 2) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
+       if(400 ==send_to_next(GET_NODE, arg_a_int, 0)){
+        respond(c, 400, 0, "");
+        pthread_mutex_unlock(&mt);
+        return;
        }
-       else{
-          (arg_b_part == 2) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
-         if(400 ==send_to_next(GET_NODE, arg_b_int, 0)){
-          respond(c, 400, 0, "");
-          pthread_mutex_unlock(&mt);
-          return;
-         }
-       }
+       a_in = true;
      }
-     bool in_graph = false;
-      if(get_node(arg_a_int)&& get_node(arg_b_int) ){
-        bool in_graph = get_edge(arg_a_int, arg_b_int);
+     if (arg_b_part !=CHAIN_NUM) {
+        (arg_b_part == 2) ? (NEXT_IP = IP_2) : (NEXT_IP = IP_3);
+       if(400 ==send_to_next(GET_NODE, arg_b_int, 0)){
+        respond(c, 400, 0, "");
+        pthread_mutex_unlock(&mt);
+        return;
+       }
+       b_in = true;
+     }
+      if (!a_in || !b_in){
+        respond(c, 400, 0, "");
+        pthread_mutex_unlock(&mt);
+        return;
       }
+      
+      bool in_graph = get_edge(arg_a_int, arg_b_int);
       response = make_json_one("in_graph", 8, in_graph);
       respond(c, 200, strlen(response), response);
       free(response);
