@@ -289,14 +289,14 @@ pthread_mutex_lock(&mt);
       uint64_t arg_a_int = strtoll(tokens[index1 + 1].ptr, &endptr, 10);
       uint64_t arg_b_int = strtoll(tokens[index2 + 1].ptr, &endptr, 10);
 
-      // make sure youre on the right chain
+      // if neither node is supposed to be here, bad request
       if(!(arg_a_int %3 == CHAIN_NUM-1 || arg_b_int %3 == CHAIN_NUM-1 )){
          badRequest(c);
 pthread_mutex_unlock(&mt);
          return;
       }
 
-      // one partition edge
+      // if both nodes are here
       if(arg_a_int %3 == CHAIN_NUM-1 && arg_b_int %3 == CHAIN_NUM-1){
         if (remove_edge(arg_a_int, arg_b_int)) {
           response = make_json_two("node_a_id", "node_b_id", 9, 9, arg_a_int, arg_b_int);
@@ -308,12 +308,10 @@ pthread_mutex_unlock(&mt);
 pthread_mutex_unlock(&mt);
         return;
       }
-
       int arg_a_part = arg_a_int %3 +1;
       int arg_b_part = arg_b_int %3 +1;
       
-
-      
+      // if arg_a is on the other partition
       if (arg_a_part != CHAIN_NUM){
         if (arg_a_part == 2){
           NEXT_IP = IP_2;
@@ -327,7 +325,6 @@ pthread_mutex_unlock(&mt);
         }
         else NEXT_IP = IP_3;
       }
-
 
       // send operation to next node
        int code = send_to_next(REMOVE_EDGE, arg_a_int, arg_b_int);
@@ -389,16 +386,21 @@ pthread_mutex_unlock(&mt);
 
       bool a_in = false;
       bool b_in = false;
-      
+  
+      // if arg_a should be on this partition
       if (arg_a_part == CHAIN_NUM){
+        // if node does not exist, bad request
         if (!(get_node(arg_a_int))){
            badRequest(c);
            pthread_mutex_unlock(&mt);
            return;
         }
+        // else, arg_a exists
         else a_in = true;
       }
+      // if arg_b should be on this partition
       if (arg_b_part == CHAIN_NUM){
+        // if node does not exist, bad request
         if (!(get_node(arg_b_int))){
            badRequest(c);
            pthread_mutex_unlock(&mt);
