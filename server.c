@@ -169,17 +169,21 @@ pthread_mutex_unlock(&mt);
       uint64_t arg_a_int = strtoll(tokens[index1 + 1].ptr, &endptr, 10);
       uint64_t arg_b_int = strtoll(tokens[index2 + 1].ptr, &endptr, 10);
 
+      // if this is the wrong partition, bad request
       if(!(arg_a_int %3 == CHAIN_NUM-1 || arg_b_int %3 == CHAIN_NUM-1 )){
          badRequest(c);
         pthread_mutex_unlock(&mt);
          return;
       }
+      // if the node(s) that are supposed to be here are not, bad request
       if((arg_a_int %3 == CHAIN_NUM-1 && !(get_node(arg_a_int)))
         ||((arg_b_int %3 == CHAIN_NUM-1) && !(get_node(arg_b_int)))) {
          badRequest(c);
          pthread_mutex_unlock(&mt);
          return;
       }
+      // here we know that any node supposed to be in this partition
+      // is in fact here. So if both here, add edge and respond
       if(arg_a_int %3 == CHAIN_NUM-1 && arg_b_int %3 == CHAIN_NUM-1){
         switch (add_edge(arg_a_int, arg_b_int)) {
           case 400:
@@ -194,52 +198,63 @@ pthread_mutex_unlock(&mt);
         pthread_mutex_unlock(&mt);
         return;
       }
-
+      
+      // which partition are the nodes in
       int arg_a_part = arg_a_int %3 +1;
       int arg_b_part = arg_b_int %3 +1;
 
       bool a_is_off = false;
       int in_graph_code;
       int add_code;
-
+      
+      // if arg_a is in another partition
       if (arg_a_part != CHAIN_NUM){
         a_is_off = true;
+        // set next IP to the next partition's IP
         if (arg_a_part == 2){
           NEXT_IP = IP_2;
         }
         else NEXT_IP = IP_3;
+        // does the node exist in the other partition?
         in_graph_code = send_to_next(GET_NODE, arg_a_int, 0);
+        // node does not exist in the other partition, bad request
         if (in_graph_code == 400){
           respond(c, 400, 0, "");
           pthread_mutex_unlock(&mt);
           return;
         }
+       // add node of current partition to next partition
        add_code = send_to_next(ADD_NODE, arg_b_int, 0);
-       if (add_code!=200){
-          // there is an error, fix it
-        }
+//        if (add_code!=200){
+//           // there is an error, fix it
+//         }
+       // add other partition's node to current partition
        add_vertex(arg_a_int);
       }
-      else {
+      else { // arb_b is in another partition
         if (arg_b_part == 2){
            NEXT_IP = IP_2;
         }
         else NEXT_IP = IP_3;
+        // does the node exist in the other partition?
         in_graph_code = send_to_next(GET_NODE, arg_b_int, 0);
+        // node does not exist in the other partition, bad request
         if (in_graph_code == 400){
           respond(c, 400, 0, "");
           pthread_mutex_unlock(&mt);
           return;
         }
+        // add node of current partition to next partition
         add_code = send_to_next(ADD_NODE, arg_a_int, 0);
-        if (add_code!=200){
-          // there is an error, fix it
-        }
+//         if (add_code!=200){
+//           // there is an error, fix it
+//         }
+        // add other partition's node to current partition
         add_vertex(arg_b_int);
 
       }
 
-      // send operation to middle node
+      // send operation to other partition
       int code = send_to_next(ADD_EDGE, arg_a_int, arg_b_int);
       // if acknowledgment code not OK (=200), respond without writing
       if (code != 200) {
@@ -248,7 +263,7 @@ pthread_mutex_unlock(&mt);
         return;
       }
 
-      // fix incase of things fucking up
+      // if all is good, add the edge in the currect partition
       switch (add_edge(arg_a_int, arg_b_int)) {
         case 400:
         respond(c, 400, 0, "");
